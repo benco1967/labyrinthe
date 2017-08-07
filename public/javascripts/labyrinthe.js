@@ -2,11 +2,27 @@
  * Created by benoit on 02/08/17.
  */
 
+/*
+* 0,-1 => west
+* -1, 0 => north
+* 0, 1 => east
+* 1, 0 => south
+*/
 const laby = [];
+const alreadySeen = [];
+
+let direction = 3;
+let x = 2;
+let y = 2;
+let previousX = 2;
+let previousY = 2;
+
+Math.seedrandom('any string you like');
 
 const generateLabyrinthe = (laby) => {
   for (let i = 0; i < 43; i++) {
     const squares = [];
+
     laby.push(squares);
     for (let j = 0; j < 43; j++) {
       squares.push(true);
@@ -57,14 +73,19 @@ const generateLabyrinthe = (laby) => {
   };
   generateWalls(2, 2);
 /*
-  for (let i = 1; i < 42; i++) {
-    for (let j = 1; j < 42; j++) {
+  for (let i = 2; i < 41; i++) {
+    for (let j = 2; j < 41; j++) {
       laby[i][j] = false;
     }
   }
-  */
+*/
   laby[1][2] = 'stair-up-north';
   laby[41][40] = 'stair-down-south';
+
+  for(let i = 0; i < 5; i++) {
+    laby[Math.floor(2 + Math.random() * 18) * 2 + 1][Math.floor(2 + Math.random() * 18) * 2 + 1] = 'ligth';
+  }
+
 /*
   laby[2 ][8 ] = 'stair-up-north';
   laby[7 ][12] = 'stair-up-east';
@@ -111,6 +132,12 @@ const drawLabyrinthe = (laby, id) => {
           }
           break;
         }
+        case 'ligth':
+          ctx.save();
+          ctx.fillStyle = 'yellow';
+          ctx.fillRect(10 * i, 10 * j, 10, 10);
+          ctx.restore();
+          break;
       }
     }
   }
@@ -119,31 +146,38 @@ const drawLabyrinthePos = (x, y, d, id) => {
   const canvas = document.getElementById(id);
   const ctx = canvas.getContext('2d');
   ctx.save();
+  ctx.clearRect(10 * previousX, 10 * previousY, 10, 10);
   ctx.beginPath();
-  ctx.clearRect(10 * x, 10 * y, 10, 10);
+  ctx.arc(10 * previousX + 5, 10 * previousY + 5, 2, 0 , 2 * Math.PI, true);
   ctx.fillStyle = 'red';
+  ctx.fill();
+  previousX = x;
+  previousY = y;
+  ctx.clearRect(10 * x, 10 * y, 10, 10);
+  ctx.beginPath();
   switch (d) {
-    case 0:// west
-      ctx.moveTo(10 * x + 10, 10 * y);
-      ctx.lineTo(10 * x + 10, 10 * y + 10);
-      ctx.lineTo(10 * x, 10 * y + 5);
-      break;
-    case 1:// north
-      ctx.moveTo(10 * x, 10 * y + 10);
-      ctx.lineTo(10 * x + 10, 10 * y + 10);
-      ctx.lineTo(10 * x + 5, 10 * y);
-      break;
-    case 2:// east
+    case 0: // east
       ctx.moveTo(10 * x, 10 * y);
       ctx.lineTo(10 * x, 10 * y + 10);
       ctx.lineTo(10 * x + 10, 10 * y + 5);
       break;
-    case 3:// south
+    case 1: // north
+      ctx.moveTo(10 * x, 10 * y + 10);
+      ctx.lineTo(10 * x + 10, 10 * y + 10);
+      ctx.lineTo(10 * x + 5, 10 * y);
+      break;
+    case 2: // west
+      ctx.moveTo(10 * x + 10, 10 * y);
+      ctx.lineTo(10 * x + 10, 10 * y + 10);
+      ctx.lineTo(10 * x, 10 * y + 5);
+      break;
+    case 3: // south
       ctx.moveTo(10 * x, 10 * y);
       ctx.lineTo(10 * x + 10, 10 * y);
       ctx.lineTo(10 * x + 5, 10 * y + 10);
       break;
   }
+  ctx.fillStyle = 'red';
   ctx.fill();
   ctx.restore();
 };
@@ -156,42 +190,56 @@ const engine = new BABYLON.Engine(canvasApp, true);
 let scene = null;
 let heighCamera = 2.5;
 let camera = null;
+let light = null;
+
+const getCameraPos = (x, y, d) => {
+  let cameraX = -x * 4;
+  let cameraZ = y * 4;
+  switch(direction) {
+    case 0: // east
+      cameraX += 1;
+      break;
+    case 1: // north
+      cameraZ += 1;
+      break;
+    case 2: // west
+      cameraX -= 1;
+      break;
+    case 3: // south
+      cameraZ -= 1;
+      break;
+  }
+  const targetX = x * 4;
+  const targetZ = y * 4;
+  return {
+    camera: new BABYLON.Vector3(cameraX, heighCamera, cameraZ),
+    target: new BABYLON.Vector3(-x * 4, heighCamera - .25, y * 4)
+  };
+}
 
 const drawInsideLabyrinthe = (laby, x, y, d) => {
   console.log('x:' + x + ', y:' + y + ', d:' + direction + ', h:' + heighCamera);
-  const fronts = [];
-  for (let i = -4; i < 5; i++) {
-    const front = [];
-    fronts.push(front);
-    for (let j = -4; j < 5; j++) {
-      switch (d) {
-        case 0:// west
-          front.push(laby[Math.min(Math.max(0, y - i), laby.length - 1)][Math.min(Math.max(0, x - j), laby[0].length - 1 )]);
-          break;
-        case 1:// north
-          front.push(laby[Math.min(Math.max(0, y - j), laby.length - 1)][Math.min(Math.max(0, x + i), laby[0].length - 1)]);
-          break;
-        case 2:// east
-          front.push(laby[Math.min(Math.max(0, y + i), laby.length - 1)][Math.min(Math.max(0, x + j), laby[0].length - 1)]);
-          break;
-        case 3:// south
-          front.push(laby[Math.min(Math.max(0, y + j), laby.length - 1)][Math.min(Math.max(0, x - i), laby[0].length - 1)]);
-          break;
-      }
-    }
-  }
   drawLabyrinthePos(x, y, d, 'globalMap');
-  drawLabyrinthe(fronts,'localMap');
-  drawLabyrinthePos(4, 4, 2, 'localMap');
 
   // Now, call the createScene function that you just finished creating
-  scene = createScene(fronts, d);
+  if(scene === null) {
+    scene = createScene(laby, x, y, d);
+  }
+  else {
+    const pos = getCameraPos(x, y, d);
+    camera.setPosition(pos.camera);
+    camera.setTarget(pos.target);
+    light.position = pos.camera;
+  }
   scene.render();
 };
 
-
+/*
+ * x > 0 => east
+ * z > 0 => south
+ */
 // This begins the creation of a function that we will 'call' just after it's built
-const createScene = (fronts, direction) => {
+const createScene = (laby, x, y, direction) => {
 
   // Now create a basic Babylon Scene object
   const scene = new BABYLON.Scene(engine);
@@ -199,16 +247,15 @@ const createScene = (fronts, direction) => {
   // Change the scene background color to green.
   scene.clearColor = new BABYLON.Color3(0, 0, 0);
 
-  const camX = fronts[0].length * 4 / 2 - 2;
-  const camZ = fronts.length * 4 / 2 - 3;
+  const pos = getCameraPos(x, y, direction);
   // This creates and positions a free camera
-  camera = new BABYLON.ArcRotateCamera("camera1", 0, 0, 1, new BABYLON.Vector3(camX, heighCamera, camZ), scene);
+  camera = new BABYLON.ArcRotateCamera("camera1", 0, 0, 1, pos.camera, scene);
 
   // This targets the camera in the front
-  camera.setTarget(new BABYLON.Vector3(camX, heighCamera + .8, camZ + 1));
+  camera.setTarget(pos.target);
 
   // This creates a light
-  const light = new BABYLON.PointLight("light1", new BABYLON.Vector3(camX, 3, camZ), scene);
+  light = new BABYLON.PointLight("light1", pos.camera, scene);
 
   light.diffuse = new BABYLON.Color3(1, 1, .9);
   light.specular = new BABYLON.Color3(.25, .25, .2);
@@ -237,127 +284,169 @@ const createScene = (fronts, direction) => {
   floorTextureStair.diffuseTexture.uScale = 1.5;
   floorTextureStair.diffuseTexture.vScale = .15;
 
-  for(let i = 0; i < fronts.length; i++) {
-    for(let j = 0; j < fronts[0].length; j++) {
-      let stair = null;
-      switch(fronts[i][j]) {
+  const wall = (i, j, d, h) => {
+    const y = h || 2;
+    switch(d) {
+      case 0: // east
+        const right = BABYLON.Mesh.CreatePlane("right-" + i + "-" + j, 4, scene);
+        right.position = new BABYLON.Vector3(-4 * j + 2, y, 4 * i);   // Using a vector
+        right.rotation.y = Math.PI / 2;
+        right.material = brickTexture;
+        break;
+      case 1: // north
+        const front = BABYLON.Mesh.CreatePlane("front-" + i + "-" + j, 4, scene);
+        front.position = new BABYLON.Vector3(-4 * j, y, 4 * i - 2);   // Using a vector
+        front.rotation.y = Math.PI;
+        front.material = brickTexture;
+        break;
+      case 2: // west
+        const left = BABYLON.Mesh.CreatePlane("left-" + i + "-" + j, 4, scene);
+        left.position = new BABYLON.Vector3(-4 * j - 2, y, 4 * i);   // Using a vector
+        left.rotation.y = -Math.PI / 2;
+        left.material = brickTexture;
+        break;
+      case 3: // south
+        const back = BABYLON.Mesh.CreatePlane("back-" + i + "-" + j, 4, scene);
+        back.position = new BABYLON.Vector3(-4 * j, y, 4 * i + 2);   // Using a vector
+        back.material = brickTexture;
+        break;
+    }
+  };
+  const floorTile = (i, j) => {
+    const floor = BABYLON.Mesh.CreateGround("floor-" + i + "-" + j, 4.0, 4.0, 2, scene);
+    floor.position = new BABYLON.Vector3(-4 * j, 0, 4 * i);
+    floor.material = floorTexture;
+
+    const ceil = BABYLON.Mesh.CreatePlane("ceil-" + i + "-" + j, 4.0, scene);
+    ceil.rotation = new BABYLON.Vector3(-Math.PI / 2, 0, 0);
+    ceil.position = new BABYLON.Vector3(-4 * j, 4, 4 * i);
+    ceil.material = brickTexture;
+  };
+  const stairTile = (i, j, stairDirection) => {
+    let prevStairStep = null;
+    for (let h = 0; h < 10; h++) {
+      let stairStep = BABYLON.Mesh.CreateGround("stair-step-" + i + "-" + j + "-" + h, 4, .4, 2, scene);
+      stairStep.material = floorTextureStair;
+      if (prevStairStep === null) {
+        switch (stairDirection % 4) {
+          case 0: // east
+            stairStep.position.x = -4 * j + 1.8;
+            stairStep.position.z = 4 * i;
+            break;
+          case 1: // north
+            stairStep.position.x = -4 * j;
+            stairStep.position.z = 4 * i + 1.8;
+            break;
+          case 2: // west
+            stairStep.position.x = -4 * j - 1.8;
+            stairStep.position.z = 4 * i;
+            break;
+          case 3: // south
+            stairStep.position.x = -4 * j;
+            stairStep.position.z = 4 * i - 1.8;
+            break;
+        }
+        stairStep.rotation.y = -Math.PI * (stairDirection % 4 - 1) / 2;
+
+        let stairCeil = BABYLON.MeshBuilder.CreatePlane("stair-ceil-" + i + "-" + j, {
+          width: 4, height: 5.656854249
+        }, scene);
+        stairCeil.parent = stairStep;
+        stairCeil.position = new BABYLON.Vector3(0, stairDirection < 4 ? 6 : 2, -1.8);
+        stairCeil.rotation.x = (stairDirection < 4 ? 1.75 : 1.25) * Math.PI;
+        stairCeil.material = ceilTextureStair;
+
+        wall(i, j, stairDirection % 2 + 1, 2);
+        wall(i, j, (stairDirection % 2 + 3) % 4, 2);
+        wall(i, j, stairDirection % 2 + 1, stairDirection < 4 ? 6 : -2);
+        wall(i, j, (stairDirection % 2 + 3) % 4, stairDirection < 4 ? 6 : -2);
+      }
+      else {
+        const stairRiser = BABYLON.Mesh.CreateGround("stair-riser-" + i + "-" + j + "-" + h, 4, .4, 2, scene);
+        stairRiser.material = riserTextureStair;
+        stairRiser.parent = prevStairStep;
+        stairRiser.position = new BABYLON.Vector3(0, stairDirection < 4 ? .2 : -.2, -.2);
+        stairRiser.rotation.x = (stairDirection < 4 ? 1 : -1) * Math.PI / 2;
+
+        stairStep.parent = prevStairStep;
+        stairStep.position = new BABYLON.Vector3(0, stairDirection < 4 ? .4 : -.4, -.4);
+      }
+      prevStairStep = stairStep;
+    }
+  };
+
+  for(let i = 0; i < laby.length; i++) {
+    for(let j = 0; j < laby[0].length; j++) {
+      switch(laby[i][j]) {
+        case 'ligth':
+          const diffuse = new BABYLON.Color3(.5, .5, .45);
+          const specular = new BABYLON.Color3(.25, .25, .2);
+          if(j > 0 && laby[i][j - 1] !== true) {
+            const light = new BABYLON.PointLight("light-" + i + "-" + (j - 1), new BABYLON.Vector3(4 * i, 3, 4 * j - 2.2), scene);
+            light.diffuse = diffuse;
+            light.specular = specular;
+            light.range = 5;
+          }
+          if(j < (laby.length - 1) && laby[i][j + 1] !== true) {
+            const light = new BABYLON.PointLight("light-" + i + "-" + (j + 1), new BABYLON.Vector3(4 * i, 3, 4 * j + 2.2), scene);
+            light.diffuse = diffuse;
+            light.specular = specular;
+            light.range = 5;
+          }
+          if(i > 0 && laby[i - 1][j] !== true) {
+            const light = new BABYLON.PointLight("light-" + (i - 1) + "-" + j, new BABYLON.Vector3(4 * i - 2.2, 3, 4 * j), scene);
+            light.diffuse = diffuse;
+            light.specular = specular;
+            light.range = 5;
+          }
+          if(i < (laby.length - 1) && laby[i + 1][j] !== true) {
+            const light = new BABYLON.PointLight("light-" + (i + 1) + "-" + j, new BABYLON.Vector3(4 * i + 2.2, 3, 4 * j), scene);
+            light.diffuse = diffuse;
+            light.specular = specular;
+            light.range = 5;
+          }
+          break;
         case true:
-          if (j < 5) {
-            const back = BABYLON.Mesh.CreatePlane("back-" + i + "-" + j, 4, scene, false, BABYLON.Mesh.DOUBLESIDE);
-            back.position = new BABYLON.Vector3(4 * i, 2, 4 * j + 2);   // Using a vector
-            back.material = brickTexture;
-          }
-          if (j > 3) {
-            const front = BABYLON.Mesh.CreatePlane("front-" + i + "-" + j, 4, scene, false, BABYLON.Mesh.DOUBLESIDE);
-            front.position = new BABYLON.Vector3(4 * i, 2, 4 * j - 2);   // Using a vector
-            front.material = brickTexture;
-          }
-          if(i < 5) {
-            const right = BABYLON.Mesh.CreatePlane("right-" + i + "-" + j, 4, scene, false, BABYLON.Mesh.DOUBLESIDE);
-            right.position = new BABYLON.Vector3(4 * i + 2, 2, 4 * j);   // Using a vector
-            right.rotation.y = Math.PI / 2;
-            right.material = brickTexture;
-          }
-          if(i > 3) {
-            const left = BABYLON.Mesh.CreatePlane("left-" + i + "-" + j, 4, scene, false, BABYLON.Mesh.DOUBLESIDE);
-            left.position = new BABYLON.Vector3(4 * i - 2, 2, 4 * j);   // Using a vector
-            left.rotation.y = Math.PI / 2;
-            left.material = brickTexture;
-          }
           break;
         case false:
-          const floor = BABYLON.Mesh.CreatePlane("floor-" + i + "-" + j, 4.0, scene);
-          floor.rotation = new BABYLON.Vector3(Math.PI / 2, 0, 0);
-          floor.position = new BABYLON.Vector3(4 * i, 0, 4 * j);
-          floor.material = floorTexture;
-
-          const ceil = BABYLON.Mesh.CreatePlane("ceil-" + i + "-" + j, 4.0, scene);
-          ceil.rotation = new BABYLON.Vector3(-Math.PI / 2, 0, 0);
-          ceil.position = new BABYLON.Vector3(4 * i, 4, 4 * j);
-          ceil.material = brickTexture;
-          break;
-        case 'stair-up-west':
-          stair = (direction + 2) % 4;
-          break;
-        case 'stair-up-north':
-          stair = (direction + 1) % 4;
+          floorTile(i, j);
+          if(laby[i][j-1] !== false) { //east
+            wall(i, j, 0);
+          }
+          if(laby[i-1][j] !== false) { //north
+            wall(i, j, 1);
+          }
+          if(laby[i][j+1] !== false) { //west
+            wall(i, j, 2);
+          }
+          if(laby[i+1][j] !== false) { //south
+            wall(i, j, 3);
+          }
           break;
         case 'stair-up-east':
-          stair = direction;
+          stairTile(i, j, 0);
+          break;
+        case 'stair-up-north':
+          stairTile(i, j, 1);
+          break;
+        case 'stair-up-west':
+          stairTile(i, j, 2);
           break;
         case 'stair-up-south':
-          stair = (direction + 3) % 4;
-          break;
-        case 'stair-down-west':
-          stair = (direction + 2) % 4 + 4;
-          break;
-        case 'stair-down-north':
-          stair = (direction + 1) % 4 + 4;
+          stairTile(i, j, 3);
           break;
         case 'stair-down-east':
-          stair = direction + 4;
+          stairTile(i, j, 4);
+          break;
+        case 'stair-down-north':
+          stairTile(i, j, 5);
+          break;
+        case 'stair-down-west':
+          stairTile(i, j, 6);
           break;
         case 'stair-down-south':
-          stair = (direction + 3) % 4 + 4;
+          stairTile(i, j, 7);
           break;
-      }
-      if(stair !== null) {
-        console.log('stair ' + stair);
-        let prevStairStep = null;
-        for (let h = 0; h < 13; h++) {
-          let stairStep = BABYLON.Mesh.CreateGround("stair-step-" + i + "-" + j + "-" + h, 4, .4, 2, scene);
-          stairStep.material = floorTextureStair;
-          if (prevStairStep === null) {
-            switch (stair % 4) {
-              case 0: //back
-                stairStep.position.x = 4 * i;
-                stairStep.position.z = 4 * j + 1.8;
-                break;
-              case 1: // right
-                stairStep.position.x = 4 * i - 1.8;
-                stairStep.position.z = 4 * j;
-                break;
-              case 2: // front
-                stairStep.position.x = 4 * i;
-                stairStep.position.z = 4 * j - 1.8;
-                break;
-              case 3: // left
-                stairStep.position.x = 4 * i + 1.8;
-                stairStep.position.z = 4 * j;
-                break;
-            }
-            stairStep.rotation.y = -Math.PI * (stair % 4) / 2;
-
-            let stairCeil = BABYLON.Mesh.CreateGround("stair-ceil-" + i + "-" + j, 4, 6.24, 2, scene);
-            stairCeil.parent = stairStep;
-            stairCeil.position = new BABYLON.Vector3(0, stair < 4 ? 6 : 2, -2.2);
-            stairCeil.rotation.x = (stair < 4 ? 1.224247425 : 0.775752575) * Math.PI;
-            stairCeil.material = ceilTextureStair;
-
-            const right = BABYLON.Mesh.CreatePlane("right-" + i + "-" + j, 4, scene, false, BABYLON.Mesh.DOUBLESIDE);
-            right.position = new BABYLON.Vector3(2, stair < 4 ? 6 : -2, -1.8);   // Using a vector
-            right.rotation.y = Math.PI / 2;
-            right.material = brickTexture;
-            right.parent = stairStep;
-
-            const left = BABYLON.Mesh.CreatePlane("left-" + i + "-" + j, 4, scene, false, BABYLON.Mesh.DOUBLESIDE);
-            left.position = new BABYLON.Vector3(-2, stair < 4 ? 6 : -2, -1.8);   // Using a vector
-            left.rotation.y = Math.PI / 2;
-            left.material = brickTexture;
-            left.parent = stairStep;
-          }
-          else {
-            const stairRiser = BABYLON.Mesh.CreateGround("stair-riser-" + i + "-" + j + "-" + h, 4, .34, 2, scene);
-            stairRiser.material = riserTextureStair;
-            stairRiser.parent = prevStairStep;
-            stairRiser.position = new BABYLON.Vector3(0, stair < 4 ? .17 : -.17, -.2);
-            stairRiser.rotation.x = (stair < 4 ? 1 : -1) * Math.PI / 2;
-
-            stairStep.parent = prevStairStep;
-            stairStep.position = new BABYLON.Vector3(0, stair < 4 ? .34 : -.34, -.4);
-          }
-          prevStairStep = stairStep;
-        }
       }
     }
   }
@@ -367,22 +456,17 @@ const createScene = (fronts, direction) => {
 
 };  // End of createScene function
 
-
-
-let direction = 2;
-let x = 2;
-let y = 2;
 generateLabyrinthe(laby);
 drawLabyrinthe(laby,'globalMap');
 drawInsideLabyrinthe(laby, x, y, direction);
 
 document.onkeyup = function (evt) {
 
-  const moveTo = (orientation, dx, dz) => {
+  const moveTo = (orientation) => {
     switch (orientation) {
-      case 0: // west
-        if (x > 0 && laby[y][x - 1] === false) {
-          x--;
+      case 0: // east
+        if (x < laby[0].length && laby[y][x + 1] === false) {
+          x++;
         }
         break;
       case 1: // north
@@ -390,9 +474,9 @@ document.onkeyup = function (evt) {
           y--;
         }
         break;
-      case 2: // east
-        if (x < laby[0].length && laby[y][x + 1] === false) {
-          x++;
+      case 2: // west
+        if (x > 0 && laby[y][x - 1] === false) {
+          x--;
         }
         break;
       case 3: // south
@@ -401,17 +485,14 @@ document.onkeyup = function (evt) {
         }
         break;
     }
-    drawLabyrinthe(laby, 'globalMap');
     drawInsideLabyrinthe(laby, x, y, direction);
   };
   const rotateRight = () => {
-    direction = (direction + 1) % 4;
-    drawLabyrinthe(laby, 'globalMap');
+    direction = (direction + 3) % 4;
     drawInsideLabyrinthe(laby, x, y, direction);
   };
   const rotateLeft = () => {
-    direction = (direction + 3) % 4;
-    drawLabyrinthe(laby, 'globalMap');
+    direction = (direction + 1) % 4;
     drawInsideLabyrinthe(laby, x, y, direction);
   };
 
@@ -425,25 +506,23 @@ document.onkeyup = function (evt) {
       rotateLeft();
       break;
     case 90: //forward
-      moveTo(direction, 1, 0);
+      moveTo(direction);
       break;
     case 83: // backward
-      moveTo([2, 3, 0, 1][direction], -1, 0);
+      moveTo([2, 3, 0, 1][direction]);
       break;
     case 68: // right
-      moveTo([1, 2, 3, 0][direction], 0, 1);
+      moveTo([3, 0, 1, 2][direction]);
       break;
     case 81: // left
-      moveTo([3, 0, 1, 2][direction], 0, -1);
+      moveTo([1, 2, 3, 0][direction]);
       break;
     case 38: // up
-      heighCamera += 0.25;
-      drawLabyrinthe(laby, 'globalMap');
+      heighCamera += 0.25 * evt.shiftKey ? 10 : 1;
       drawInsideLabyrinthe(laby, x, y, direction);
       break;
     case 40: // down
-      heighCamera -= 0.25;
-      drawLabyrinthe(laby, 'globalMap');
+      heighCamera -= 0.25 * evt.shiftKey ? 10 : 1;
       drawInsideLabyrinthe(laby, x, y, direction);
       break;
   }
