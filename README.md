@@ -15,5 +15,5 @@ Les déplacements se font avec
 * D : déplacemtn latéral droit
 * haut : augmenter l'altitude
 * bas : diminuer l'altitude
-* clic gauche sur le labyrinthe 2D : bascule entre mur et sol
-* clic droit : téléportation
+* clic sur le labyrinthe 2D : bascule entre mur et sol
+* clic + ctrl : téléportation

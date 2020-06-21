@@ -232,7 +232,7 @@ const drawInsideLabyrinthe = (laby, x, y, d, redraw) => {
   drawLabyrinthePos(x, y, d, 'globalMap');
 
   // Now, call the createScene function that you just finished creating
-  if(redraw) {
+  if (redraw) {
     scene = null;
   }
 
@@ -621,16 +621,13 @@ const canvasMap = document.getElementById('globalMap');
 canvasMap.onmousedown = (evt) => {
   const xx = Math.floor(evt.offsetX / 10);
   const yy = Math.floor(evt.offsetY / 10);
-  if (xx > 0 && xx < laby[0].length - 1 && yy > 0 && yy < laby.length - 1) {
-    switch (evt.button) {
-      case 0:
-        laby[yy][xx] = laby[yy][xx] === 'wall' ? 'floor' : 'wall';
-        break;
-      case 2:
-        laby[yy][xx] = 'floor';
-        x = xx;
-        y = yy;
-        break;
+  if (xx > 0 && xx < laby[0].length - 1 && yy > 0 && yy < laby.length - 1 && evt.button === 0) {
+    if (evt.ctrlKey) {
+      laby[yy][xx] = 'floor';
+      x = xx;
+      y = yy;
+    } else {
+      laby[yy][xx] = laby[yy][xx] === 'wall' ? 'floor' : 'wall';
     }
   }
   drawLabyrinthe(laby, alreadySeen, 'globalMap');
