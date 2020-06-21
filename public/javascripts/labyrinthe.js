@@ -68,31 +68,31 @@ const generateLabyrinthe = (laby) => {
     }
   };
   generateWalls(1, 1);
-/*
-  for (let i = 2; i < 41; i++) {
-    for (let j = 2; j < 41; j++) {
-      laby[i][j] = 'floor';
+  /*
+    for (let i = 2; i < 41; i++) {
+      for (let j = 2; j < 41; j++) {
+        laby[i][j] = 'floor';
+      }
     }
-  }
-*/
+  */
   laby[0][1] = 'stair-up-north';
   laby[42][41] = 'stair-down-south';
 
-  for(let i = 0; i < 5; i++) {
+  for (let i = 0; i < 5; i++) {
     laby[Math.floor(2 + Math.random() * 18) * 2][Math.floor(2 + Math.random() * 18) * 2] = 'light';
   }
 
-/*
-  laby[2 ][8 ] = 'stair-up-north';
-  laby[7 ][12] = 'stair-up-east';
-  laby[7 ][2 ] = 'stair-up-west';
-  laby[12][7 ] = 'stair-up-south';
+  /*
+    laby[2 ][8 ] = 'stair-up-north';
+    laby[7 ][12] = 'stair-up-east';
+    laby[7 ][2 ] = 'stair-up-west';
+    laby[12][7 ] = 'stair-up-south';
 
-  laby[5 ][10] = 'stair-down-north';
-  laby[10][15] = 'stair-down-east';
-  laby[10][5 ] = 'stair-down-west';
-  laby[15][10] = 'stair-down-south';
-*/
+    laby[5 ][10] = 'stair-down-north';
+    laby[10][15] = 'stair-down-east';
+    laby[10][5 ] = 'stair-down-west';
+    laby[15][10] = 'stair-down-south';
+  */
 };
 const drawLabyrinthe = (laby, alreadySeen, id) => {
   const canvas = document.getElementById(id);
@@ -104,10 +104,9 @@ const drawLabyrinthe = (laby, alreadySeen, id) => {
       switch (square) {
         case 'wall':
           ctx.save();
-          if(alreadySeen[j][i] === true) {
+          if (alreadySeen[j][i] === true) {
             ctx.fillStyle = 'black';
-          }
-          else {
+          } else {
             ctx.fillStyle = 'grey';
           }
           ctx.fillRect(10 * i, 10 * j, 10, 10);
@@ -115,10 +114,9 @@ const drawLabyrinthe = (laby, alreadySeen, id) => {
           break;
         case 'floor':
           ctx.save();
-          if(alreadySeen[j][i] === true) {
+          if (alreadySeen[j][i] === true) {
             ctx.fillStyle = 'white';
-          }
-          else {
+          } else {
             ctx.fillStyle = '#dddddd';
           }
           ctx.fillRect(10 * i, 10 * j, 10, 10);
@@ -160,7 +158,7 @@ const drawLabyrinthePos = (x, y, d, id) => {
   ctx.save();
   ctx.clearRect(10 * previousX, 10 * previousY, 10, 10);
   ctx.beginPath();
-  ctx.arc(10 * previousX + 5, 10 * previousY + 5, 2, 0 , 2 * Math.PI, true);
+  ctx.arc(10 * previousX + 5, 10 * previousY + 5, 2, 0, 2 * Math.PI, true);
   ctx.fillStyle = 'red';
   ctx.fill();
   previousX = x;
@@ -204,10 +202,10 @@ let heighCamera = 2.5;
 let camera = null;
 let light = null;
 
-const getCameraPos = (x, y, d) => {
+const getCameraPos = (x, y, direction) => {
   let cameraX = -x * 4;
   let cameraZ = y * 4;
-  switch(direction) {
+  switch (direction) {
     case 0: // east
       cameraX += 1;
       break;
@@ -221,7 +219,7 @@ const getCameraPos = (x, y, d) => {
       cameraZ -= 1;
       break;
   }
-  const targetX = - x * 4;
+  const targetX = -x * 4;
   const targetZ = y * 4;
   return {
     camera: new BABYLON.Vector3(cameraX, heighCamera, cameraZ),
@@ -229,15 +227,18 @@ const getCameraPos = (x, y, d) => {
   };
 }
 
-const drawInsideLabyrinthe = (laby, x, y, d) => {
+const drawInsideLabyrinthe = (laby, x, y, d, redraw) => {
   console.log('x:' + x + ', y:' + y + ', d:' + direction + ', h:' + heighCamera);
   drawLabyrinthePos(x, y, d, 'globalMap');
 
   // Now, call the createScene function that you just finished creating
-  if(scene === null) {
-    scene = createScene(laby, x, y, d);
+  if(redraw) {
+    scene = null;
   }
-  else {
+
+  if (scene === null) {
+    scene = createScene(laby, x, y, d);
+  } else {
     const pos = getCameraPos(x, y, d);
     camera.setPosition(pos.camera);
     camera.setTarget(pos.target);
@@ -298,7 +299,7 @@ const createScene = (laby, x, y, direction) => {
 
   const wall = (i, j, d, h) => {
     const y = h || 2;
-    switch(d) {
+    switch (d) {
       case 0: // east
         const right = BABYLON.Mesh.CreatePlane("right-" + i + "-" + j, 4, scene);
         right.position = new BABYLON.Vector3(-4 * j + 2, y, 4 * i);   // Using a vector
@@ -372,8 +373,7 @@ const createScene = (laby, x, y, direction) => {
         wall(i, j, (stairDirection % 2 + 3) % 4, 2);
         wall(i, j, stairDirection % 2 + 1, stairDirection < 4 ? 6 : -2);
         wall(i, j, (stairDirection % 2 + 3) % 4, stairDirection < 4 ? 6 : -2);
-      }
-      else {
+      } else {
         const stairRiser = BABYLON.Mesh.CreateGround("stair-riser-" + i + "-" + j + "-" + h, 4, .4, 2, scene);
         stairRiser.material = riserTextureStair;
         stairRiser.parent = prevStairStep;
@@ -387,31 +387,31 @@ const createScene = (laby, x, y, direction) => {
     }
   };
 
-  for(let i = 0; i < laby.length; i++) {
-    for(let j = 0; j < laby[0].length; j++) {
-      switch(laby[i][j]) {
+  for (let i = 0; i < laby.length; i++) {
+    for (let j = 0; j < laby[0].length; j++) {
+      switch (laby[i][j]) {
         case 'light':
           const diffuse = new BABYLON.Color3(.5, .5, .45);
           const specular = new BABYLON.Color3(.25, .25, .2);
-          if(j > 0 && laby[i][j - 1] !== 'wall') {
+          if (j > 0 && laby[i][j - 1] !== 'wall') {
             const light = new BABYLON.PointLight("light-" + i + "-" + (j - 1), new BABYLON.Vector3(4 * i, 3, 4 * j - 2.2), scene);
             light.diffuse = diffuse;
             light.specular = specular;
             light.range = 5;
           }
-          if(j < (laby.length - 1) && laby[i][j + 1] !== 'wall') {
+          if (j < (laby.length - 1) && laby[i][j + 1] !== 'wall') {
             const light = new BABYLON.PointLight("light-" + i + "-" + (j + 1), new BABYLON.Vector3(4 * i, 3, 4 * j + 2.2), scene);
             light.diffuse = diffuse;
             light.specular = specular;
             light.range = 5;
           }
-          if(i > 0 && laby[i - 1][j] !== 'wall') {
+          if (i > 0 && laby[i - 1][j] !== 'wall') {
             const light = new BABYLON.PointLight("light-" + (i - 1) + "-" + j, new BABYLON.Vector3(4 * i - 2.2, 3, 4 * j), scene);
             light.diffuse = diffuse;
             light.specular = specular;
             light.range = 5;
           }
-          if(i < (laby.length - 1) && laby[i + 1][j] !== 'wall') {
+          if (i < (laby.length - 1) && laby[i + 1][j] !== 'wall') {
             const light = new BABYLON.PointLight("light-" + (i + 1) + "-" + j, new BABYLON.Vector3(4 * i + 2.2, 3, 4 * j), scene);
             light.diffuse = diffuse;
             light.specular = specular;
@@ -422,16 +422,16 @@ const createScene = (laby, x, y, direction) => {
           break;
         case 'floor':
           floorTile(i, j);
-          if(laby[i][j-1] === 'wall' || laby[i][j-1] === 'light') { //east
+          if (laby[i][j - 1] === 'wall' || laby[i][j - 1] === 'light') { //east
             wall(i, j, 0);
           }
-          if(laby[i-1][j] === 'wall' || laby[i-1][j] === 'light') { //north
+          if (laby[i - 1][j] === 'wall' || laby[i - 1][j] === 'light') { //north
             wall(i, j, 1);
           }
-          if(laby[i][j+1] === 'wall' || laby[i][j+1] === 'light') { //west
+          if (laby[i][j + 1] === 'wall' || laby[i][j + 1] === 'light') { //west
             wall(i, j, 2);
           }
-          if(laby[i+1][j] === 'wall' || laby[i+1][j] === 'light') { //south
+          if (laby[i + 1][j] === 'wall' || laby[i + 1][j] === 'light') { //south
             wall(i, j, 3);
           }
           break;
@@ -476,7 +476,7 @@ const rangeY = (y) => {
 }
 
 const setSquare = (tab, x, y, dx, dy, d, value) => {
-  switch(d) {
+  switch (d) {
     case 0: // east
       tab[rangeY(y + dx)][rangeX(x + dy)] = value;
       break;
@@ -493,7 +493,7 @@ const setSquare = (tab, x, y, dx, dy, d, value) => {
 };
 
 const getSquare = (tab, x, y, dx, dy, d) => {
-  switch(d) {
+  switch (d) {
     case 0: // east
       return tab[rangeY(y + dx)][rangeX(x + dy)];
     case 1: // north
@@ -507,23 +507,21 @@ const getSquare = (tab, x, y, dx, dy, d) => {
 
 const updateSeen = (x, y, d) => {
   alreadySeen[y][x] = true;
-  for(let i = 0; i < 5; i++) {
-    if(!getSquare(alreadySeen, x, y, 0, i, d)) {
-      if(getSquare(laby, x, y, 0, i - 1, d) === 'floor') {
+  for (let i = 0; i < 5; i++) {
+    if (!getSquare(alreadySeen, x, y, 0, i, d)) {
+      if (getSquare(laby, x, y, 0, i - 1, d) === 'floor') {
         setSquare(alreadySeen, x, y, 0, i, d, true);
-      }
-      else {
+      } else {
         break;
       }
     }
-    for(let j = 1; j <= i; j++) {
+    for (let j = 1; j <= i; j++) {
       if (!getSquare(alreadySeen, x, y, j, i, d)) {
         if (getSquare(laby, x, y, j - 1, i - 1, d) !== 'wall' &&
           (getSquare(laby, x, y, j - 1, i, d) === 'floor' && getSquare(alreadySeen, x, y, j - 1, i, d)) ||
           (getSquare(laby, x, y, j, i - 1, d) === 'floor' && getSquare(alreadySeen, x, y, j, i - 1, d))) {
           setSquare(alreadySeen, x, y, j, i, d, true);
-        }
-        else {
+        } else {
           break;
         }
         if (getSquare(laby, x, y, j, i, d) === 'wall') {
@@ -531,14 +529,13 @@ const updateSeen = (x, y, d) => {
         }
       }
     }
-    for(let j = 1; j <= i; j++) {
+    for (let j = 1; j <= i; j++) {
       if (!getSquare(alreadySeen, x, y, -j, i, d)) {
         if (getSquare(laby, x, y, -j + 1, i - 1, d) !== 'wall' &&
           (getSquare(laby, x, y, -j + 1, i, d) === 'floor' && getSquare(alreadySeen, x, y, -j + 1, i, d)) ||
           (getSquare(laby, x, y, -j, i - 1, d) === 'floor' && getSquare(alreadySeen, x, y, -j, i - 1, d))) {
           setSquare(alreadySeen, x, y, -j, i, d, true);
-        }
-        else {
+        } else {
           break;
         }
         if (getSquare(laby, x, y, j, i, d) === 'wall') {
@@ -575,7 +572,7 @@ document.onkeyup = function (evt) {
         break;
     }
     updateSeen(x, y, direction);
-    drawLabyrinthe(laby, alreadySeen,'globalMap');
+    drawLabyrinthe(laby, alreadySeen, 'globalMap');
     drawInsideLabyrinthe(laby, x, y, direction);
   };
   const rotateRight = () => {
@@ -590,7 +587,7 @@ document.onkeyup = function (evt) {
   };
 
   console.log(evt.keyCode);
-  switch(evt.keyCode) {
+  switch (evt.keyCode) {
     case 69: // turn right
       rotateRight();
       break;
@@ -624,14 +621,23 @@ const canvasMap = document.getElementById('globalMap');
 canvasMap.onmousedown = (evt) => {
   const xx = Math.floor(evt.offsetX / 10);
   const yy = Math.floor(evt.offsetY / 10);
-  if(xx > 0 && xx < laby[0].length - 1 && yy > 0 && yy < laby.length - 1) {
-    laby[yy][xx] = laby[yy][xx] === 'wall' ? 'floor' : 'wall';
+  if (xx > 0 && xx < laby[0].length - 1 && yy > 0 && yy < laby.length - 1) {
+    switch (evt.button) {
+      case 0:
+        laby[yy][xx] = laby[yy][xx] === 'wall' ? 'floor' : 'wall';
+        break;
+      case 2:
+        laby[yy][xx] = 'floor';
+        x = xx;
+        y = yy;
+        break;
+    }
   }
-  drawLabyrinthe(laby, alreadySeen,'globalMap');
-  drawInsideLabyrinthe(laby, x, y, direction);
+  drawLabyrinthe(laby, alreadySeen, 'globalMap');
+  drawInsideLabyrinthe(laby, x, y, direction, true);
 };
 
 generateLabyrinthe(laby);
 updateSeen(x, y, direction)
-drawLabyrinthe(laby, alreadySeen,'globalMap');
+drawLabyrinthe(laby, alreadySeen, 'globalMap');
 drawInsideLabyrinthe(laby, x, y, direction);
